@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/binary"
+	utils "file-streamer/utils"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"time"
 )
@@ -14,20 +14,13 @@ import (
 type FileServer struct{}
 
 func (fs *FileServer) start() {
-	ln, err := net.Listen("tcp", ":3000")
-	if err != nil {
-		log.Fatal(err)
-	}
+	ln := utils.Must(net.Listen("tcp", ":3000"))
 
 	for {
-		conn, err := ln.Accept()
-		if err != nil {
-			log.Fatal(err)
-		}
+		conn := utils.Must(ln.Accept())
 
 		go fs.readLoop(conn)
 	}
-
 }
 
 func (fs *FileServer) readLoop(conn net.Conn) {
@@ -35,10 +28,7 @@ func (fs *FileServer) readLoop(conn net.Conn) {
 	for {
 		var size int64
 		binary.Read(conn, binary.LittleEndian, &size)
-		nBytes, err := io.CopyN(buf, conn, size)
-		if err != nil {
-			log.Fatal(err)
-		}
+		nBytes := utils.Must(io.CopyN(buf, conn, size))
 
 		fmt.Println(buf.Bytes())
 		fmt.Printf("Received %d bytes over network \n", nBytes)
@@ -70,6 +60,7 @@ func mockSendFile(size int) error {
 }
 
 func main() {
+	// wait 4 seconds and send huge file
 	go func() {
 		time.Sleep(4 * time.Second)
 		mockSendFile(200000)
